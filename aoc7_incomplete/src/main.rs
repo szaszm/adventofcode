@@ -4,6 +4,9 @@ use std::collections::HashMap;
 use std::fmt::Formatter;
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader};
+use std::mem;
+use std::cmp;
+use std::cmp::Ordering;
 use arrayvec::ArrayString;
 
 #[derive(Eq, Ord, PartialOrd, Hash, PartialEq, Copy, Clone, Debug)]
@@ -53,7 +56,7 @@ impl std::fmt::Display for Card {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, PartialOrd)]
 enum HandType {
     FiveOfAKind(Card),
     FourOfAKind(Card),
@@ -64,6 +67,50 @@ enum HandType {
     HighCard(Card)
 }
 
+impl HandType {
+    fn card1(&self) -> Card {
+        *match self {
+            HandType::FiveOfAKind(c) => c,
+            HandType::FourOfAKind(c) => c,
+            HandType::FullHouse(c, _) => c,
+            HandType::ThreeOfAKind(c) => c,
+            HandType::TwoPair(c, _) => c,
+            HandType::OnePair(c) => c,
+            HandType::HighCard(c) => c
+        }
+    }
+    fn card2(&self) -> Option<Card> {
+        match self {
+           HandType::FiveOfAKind(_) => None,
+           HandType::FourOfAKind(_) => None,
+           HandType::FullHouse(_, c) => Some(*c),
+           HandType::ThreeOfAKind(_) => None,
+           HandType::TwoPair(_, c) => Some(*c),
+           HandType::OnePair(_) => None,
+           HandType::HighCard(_) => None
+        }
+    }
+}
+
+impl Ord for HandType {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let lhs_idx = mem::discriminant(&self);
+        let rhs_idx = mem::discriminant(&other);
+        if lhs_idx != rhs_idx {
+            return lhs_idx.cmp(&rhs_idx);
+        }
+        let lhs_c1 = self.card1();
+        let rhs_c1 = other.card1();
+        if lhs_c1 != rhs_c1 {
+            return lhs_c1.cmp(&rhs_c1);
+        }
+        let lhs_c2 = self.card2();
+        let rhs_c2 = other.card2();
+        lhs_c2.cmp(&rhs_c2)
+    }
+}
+
+#[derive(Debug)]
 struct Hand {
     hand: ArrayString<5>,
     bet: i32,
@@ -99,12 +146,12 @@ impl Hand {
             5 => HandType::FiveOfAKind(hand[0].1),
             4 => HandType::FourOfAKind(hand[0].1),
             3 => if hand[1].0 == 2 {
-                HandType::FullHouse(hand[0].1, hand[1].1)
+                HandType::FullHouse(cmp::max(hand[0].1, hand[1].1), cmp::min(hand[0].1, hand[1].1))
             } else {
                 HandType::ThreeOfAKind(hand[0].1)
             },
             2 => if hand[1].0 == 2 {
-                HandType::TwoPair(hand[0].1, hand[1].1)
+                HandType::TwoPair(cmp::max(hand[0].1, hand[1].1), cmp::min(hand[0].1, hand[1].1))
             } else {
                 HandType::OnePair(hand[0].1)
             },
@@ -131,7 +178,7 @@ fn main() -> io::Result<()> {
                 bet: spl[1].parse::<i32>().unwrap()
             }
         }).collect::<Vec<_>>();
-    for hand in hands {
+    for hand in &hands {
         println!("{}", hand);
         let groups = hand.group_flip();
         for (cnt, card) in &groups {
@@ -139,6 +186,16 @@ fn main() -> io::Result<()> {
         }
         println!("hand type: {:?}", Hand::hand_type(&groups));
     }
+    let hands_sorted = {
+        let mut res = hands.iter().map(|h| {
+            let groups = h.group_flip();
+            let hndt = Hand::hand_type(&groups);
+            (h, groups, hndt)
+        }).collect::<Vec<_>>();
+        res.sort_by(|(_, _, aht), (_, _, bht)| aht.cmp(bht));
+        res
+    };
+    println!("hands_sorted: {:?}", hands_sorted);
 
     Ok(())
 }
