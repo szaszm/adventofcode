@@ -1,12 +1,12 @@
 #![feature(slice_group_by)]
 
-use std::convert::identity;
+use std::collections::HashMap;
 use std::fmt::Formatter;
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader};
 use arrayvec::ArrayString;
 
-#[derive(PartialEq)]
+#[derive(Eq, Ord, PartialOrd, Hash, PartialEq, Copy, Clone, Debug)]
 enum Card {
     _2,_3,_4,_5,_6,_7,_8,_9,T,J,Q,K,A
 }
@@ -53,19 +53,63 @@ impl std::fmt::Display for Card {
     }
 }
 
+#[derive(Debug)]
+enum HandType {
+    FiveOfAKind(Card),
+    FourOfAKind(Card),
+    FullHouse(Card, Card),
+    ThreeOfAKind(Card),
+    TwoPair(Card, Card),
+    OnePair(Card),
+    HighCard(Card)
+}
+
 struct Hand {
     hand: ArrayString<5>,
     bet: i32,
 }
 
 impl Hand {
-    fn analyze(&self) {
+    fn group(&self) -> HashMap::<Card, i32> {
         let cards = self.hand.chars().map(Card::from_char).collect::<Vec<_>>();
-        let groups = cards.group_by(|a, b| a == b).into_iter()
-            .map(|(key, group)| (key, group.count()))
-            .collect::<Vec<_>>();
+        let mut groups = HashMap::<Card, i32>::new();
+        for c in cards {
+            *groups.entry(c).or_insert(0) += 1;
+        }
+        return groups;
+    }
+
+    fn group_flip(&self) -> Vec::<(i32, Card)> {
+        let groups = self.group();
+        let mut result = Vec::<(i32, Card)>::new();
         for (card, cnt) in groups {
-            println!("{} {}", card, cnt);
+            result.push((cnt, card));
+        }
+        result.sort_by(|(acnt, acard), (bcnt, bcard)| {
+            if bcnt == acnt {
+                return bcard.cmp(acard);
+            }
+            bcnt.cmp(acnt)
+        });
+        return result;
+    }
+
+    fn hand_type(hand: &Vec::<(i32, Card)>) -> HandType {
+        match hand[0].0 {
+            5 => HandType::FiveOfAKind(hand[0].1),
+            4 => HandType::FourOfAKind(hand[0].1),
+            3 => if hand[1].0 == 2 {
+                HandType::FullHouse(hand[0].1, hand[1].1)
+            } else {
+                HandType::ThreeOfAKind(hand[0].1)
+            },
+            2 => if hand[1].0 == 2 {
+                HandType::TwoPair(hand[0].1, hand[1].1)
+            } else {
+                HandType::OnePair(hand[0].1)
+            },
+            1 => HandType::HighCard(hand[0].1),
+            _ => panic!()
         }
     }
 }
@@ -89,7 +133,11 @@ fn main() -> io::Result<()> {
         }).collect::<Vec<_>>();
     for hand in hands {
         println!("{}", hand);
-        hand.analyze();
+        let groups = hand.group_flip();
+        for (cnt, card) in &groups {
+            println!("{} {}", card, cnt);
+        }
+        println!("hand type: {:?}", Hand::hand_type(&groups));
     }
 
     Ok(())
