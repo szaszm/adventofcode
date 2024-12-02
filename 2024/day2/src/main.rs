@@ -86,4 +86,14 @@ fn main() {
     println!("part 1 safe reports: {p1_safe_reports}");
     println!("part 2 safe reports: {p2_safe_reports}");
     println!("part 2 broken attempt at linear algorithm - (not quite) safe reports: {p2_broken_attempt_safe_reports}");
+    for r in reports {
+        let is_safe = part2_report_is_safe_bruteforce(&r);
+        let broken_linear_is_safe = part2_report_is_safe(&r);
+        if is_safe != broken_linear_is_safe {
+            println!("difference: {}, but incorrectly detected as {}: \t {:?}",
+                if is_safe { "safe" } else { "unsafe" },
+                if broken_linear_is_safe { "safe" } else { "unsafe" },
+                r);
+        }
+    }
 }
