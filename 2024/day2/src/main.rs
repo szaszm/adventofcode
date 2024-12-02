@@ -23,7 +23,6 @@ fn is_increasing(v: &[u32]) -> bool {
     direction > 0
 }
 
-/*
 fn part2_report_is_safe(v: &[u32]) -> bool {
     if part1_report_is_safe(v) || part1_report_is_safe(&v[1..]) { return true; }
     let mut skipped: Option<usize> = None;
@@ -56,7 +55,6 @@ fn part2_report_is_safe(v: &[u32]) -> bool {
 
     true
 }
-*/
 
 fn part2_report_is_safe_bruteforce(v: &[u32]) -> bool {
     if part1_report_is_safe(&v) { return true; }
@@ -82,7 +80,10 @@ fn main() {
         reports.push(report);
     }
 
-    //let safe_reports = reports.iter().filter(|r| part1_report_is_safe(*r)).count();
-    let safe_reports = reports.iter().filter(|r| part2_report_is_safe_bruteforce(*r)).count();
-    println!("safe reports: {safe_reports}");
+    let p1_safe_reports = reports.iter().filter(|r| part1_report_is_safe(*r)).count();
+    let p2_broken_attempt_safe_reports = reports.iter().filter(|r| part2_report_is_safe(*r)).count();
+    let p2_safe_reports = reports.iter().filter(|r| part2_report_is_safe_bruteforce(*r)).count();
+    println!("part 1 safe reports: {p1_safe_reports}");
+    println!("part 2 safe reports: {p2_safe_reports}");
+    println!("part 2 broken attempt at linear algorithm - (not quite) safe reports: {p2_broken_attempt_safe_reports}");
 }
