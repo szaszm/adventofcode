@@ -4,3 +4,4 @@ cmake-build-release
 a.out
 target
 Cargo.lock
+puzzle_input.txt
