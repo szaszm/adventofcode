@@ -109,7 +109,6 @@ fn main() {
             if !do_ { return None; }
             try_parse_mul(tokens)
         });
-        //for (n1, n2) in &muls { println!("mul({},{})", n1, n2); }
 
         let mut sum = 0;
         for (n1, n2) in &muls {
