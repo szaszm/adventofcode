@@ -7,18 +7,24 @@ fn p1_pages_follow_rules(pages: &[u32], rules: &[(u32, u32)]) -> bool {
     let rules = {
         let mut rules_table: HashMap<u32, Vec<u32>> = HashMap::new();
         for &(pre, post) in rules {
-            rules_table.entry(post).or_insert(Vec::new()).push(pre);
+            rules_table.entry(pre).or_insert(Vec::new()).push(post);
         }
         rules_table
     };
-    for &num in pages {
-        seen.insert(num);
+    for num in pages {
+        let rules_for_num = rules.get(num);
+        if let Some(rules) = rules_for_num {
+            if rules.iter().any(|post| seen.contains(post)) {
+                return false;
+            }
+        }
+        seen.insert(*num);
     }
     true
 }
 
 fn main() {
-    let (rules, pages) = {
+    let (rules, updates) = {
         let file = BufReader::new(File::open("test_input.txt").expect("failed to open file"));
         let mut rules_lines: Vec<String> = vec![];
         let mut pages_lines: Vec<String> = vec![];
@@ -49,6 +55,19 @@ fn main() {
             .collect::<Vec<_>>();
         (rules, pages)
     };
-    println!("rules_lines: {rules:?}");
-    println!("pages_lines: {pages:?}");
+    let good_updates = updates.iter().filter(|update| p1_pages_follow_rules(update, &rules));
+    let mut sum = 0;
+    for pages in good_updates {
+        let middle_number = pages.get(pages.len() / 2).unwrap();
+        sum += middle_number;
+        println!("{:?}  mid: {middle_number}", pages);
+    }
+    println!("part 1: sum of middle numbers of good updates: {sum}\n");
+
+    let bad_updates = updates.iter()
+        .filter(|update| !p1_pages_follow_rules(update, &rules))
+        .collect::<Vec<_>>();
+    for pages in updates {
+        println!("{pages:?}");
+    }
 }
