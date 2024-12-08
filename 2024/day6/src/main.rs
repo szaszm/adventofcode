@@ -1,10 +1,12 @@
+use std::cmp::PartialEq;
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 struct Point(usize, usize);
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 enum Direction {
     Up,
     Right,
@@ -57,6 +59,40 @@ fn point_move(p: Point, direction: Direction, grid: &Vec<Vec<char>>) -> Option<P
     }
 }
 
+fn walk_until_loop(starting_position: Point, starting_direction: Direction, grid: &Vec<Vec<char>>) -> bool
+{
+    let mut pos = starting_position;
+    let mut direction = starting_direction;
+    let mut visited: HashSet<(Point, Direction)> = HashSet::new();
+
+    loop {
+        visited.insert((pos, direction));
+        let mut next = Point(0, 0);
+        let mut turns = 0;
+        loop {
+            if let Some(maybe_next) = point_move(pos, direction, &grid) {
+                next = maybe_next;
+            } else {
+                return false;
+            }
+            if grid_at(next, &grid) == '#' || grid_at(next, &grid) == 'O' {
+                direction = turn_right(direction);
+                turns += 1;
+                if turns > 3 { panic!("infinite turning loop"); }
+                continue;
+            } else {
+                break;
+            }
+        }
+
+        pos = next;
+        if visited.contains(&(pos, direction)) {
+            return true;
+        }
+    }
+}
+
+
 fn main() {
     let file = BufReader::new(File::open("test_input.txt").expect("failed to open file"));
     //let file = BufReader::new(File::open("puzzle_input.txt").expect("failed to open file"));
@@ -97,13 +133,13 @@ fn main() {
         }
         // part 2: If we have already visited the position to the left, then placing an obstruction
         // on next would MAYBE get us in a loop
-        // TODO: walk the path to check for loop. The loop will be a rectangle.
-        if let Some(on_our_right) = point_move(guard_pos, turn_right(direction), &grid) {
-            if turns == 0 && grid_at(on_our_right, &grid) == 'X' {
-                println!("possible obstruction position: {next:?}");
-                if !obstructions.contains(&next) {
-                    obstructions.push(next);
-                }
+        {
+            println!("possible obstruction position: {next:?}");
+            grid[next.1][next.0] = 'O';
+            let walk_result = walk_until_loop(guard_pos, direction, &grid);
+            println!("walk result: {walk_result:?}");
+            if walk_result {
+                if !obstructions.contains(&next) { obstructions.push(next); }
             }
         }
 
@@ -118,4 +154,5 @@ fn main() {
     }
     println!("part1: distinct visited: {xes}");
     println!("part2: obstructions: {obstructions:?}");
+    println!("part2: number of obstructions: {:?}", obstructions.len());
 }
