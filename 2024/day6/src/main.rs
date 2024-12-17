@@ -94,8 +94,8 @@ fn walk_until_loop(starting_position: Point, starting_direction: Direction, grid
 
 
 fn main() {
-    let file = BufReader::new(File::open("test_input.txt").expect("failed to open file"));
-    //let file = BufReader::new(File::open("puzzle_input.txt").expect("failed to open file"));
+    //let file = BufReader::new(File::open("test_input.txt").expect("failed to open file"));
+    let file = BufReader::new(File::open("puzzle_input.txt").expect("failed to open file"));
     let mut grid: Vec<Vec<char>> = vec![];
     let mut guard_pos: Point = Point(0,0);
     for (line_num, line) in file.lines().enumerate() {
@@ -135,6 +135,7 @@ fn main() {
         // on next would MAYBE get us in a loop
         {
             println!("possible obstruction position: {next:?}");
+            let mut grid = grid.clone();
             grid[next.1][next.0] = 'O';
             let walk_result = walk_until_loop(guard_pos, direction, &grid);
             println!("walk result: {walk_result:?}");
