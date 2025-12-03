@@ -18,8 +18,9 @@ fn max_joltage_part1(line: &[Num]) -> Num {
 }
 
 fn max_joltage_part2(line: &[Num], num_of_batteries: usize) -> Num {
-    // we need to pick 12 digits, and eagerly find the biggest number for out digit
-    // while making sure to enough numbers behind for the rest of the digits.
+    // we need to pick 12 digits, and eagerly find the biggest number for our digit each time,
+    // starting after the last max digit, while making sure to leave enough numbers behind
+    // for the rest of the digits (future iterations).
     let mut max: Num = 0;
     let mut maxi: Option<usize> = None;
 
@@ -59,7 +60,7 @@ fn main() {
         for num in &line {
             print!("{num}");
         }
-        let mj_p1 = max_joltage_part1(&line);
+        let mj_p1 = max_joltage_part1(&line);  // same as max_joltage_part2(&line, 2)
         let mj_p2 = max_joltage_part2(&line, NUM_OF_BATTERIES_PART2);
         println!("\tmax_joltage part1: {mj_p1}  part2: {mj_p2}");
         sum_p1 += mj_p1;
